@@ -172,14 +172,19 @@
         nav {
             position: fixed;
             top: 0;
+            left: 0;
             width: 100%;
             padding: 2rem 4rem;
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
+            display: flex;
+            justify-content: space-between;
             align-items: center;
             z-index: 100;
             color: var(--text-light);
-            transition: color 0.4s ease, background-color 0.4s ease, border-color 0.4s ease;
+            transition: color 0.4s ease, background-color 0.4s ease, border-color 0.4s ease, transform 0.4s ease;
+        }
+
+        nav.hidden {
+            transform: translateY(-100%);
         }
 
         /* Scrolled state for navigation (changes to dark text) */
@@ -196,69 +201,104 @@
             letter-spacing: -0.02em;
         }
 
-        .nav-links {
-            display: flex;
-            gap: 2.5rem;
-            list-style: none;
-            font-size: 0.75rem;
-            font-weight: 400;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
         .nav-right {
-            justify-self: end;
             display: flex;
             align-items: center;
             gap: 1rem;
         }
         
-        /* Mobile Menu Toggle */
-        .mobile-menu-btn {
-            display: none;
-            background: none;
-            border: none;
-            color: inherit;
-            font-size: 1.5rem;
-            cursor: pointer;
-            z-index: 101;
-        }
-        
-        .mobile-menu-overlay {
+        /* --- FULL SCREEN MENU OVERLAY --- */
+        .menu-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100vh;
-            background-color: var(--bg-primary);
-            color: var(--text-main);
-            z-index: 99;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            z-index: 999; /* Above navbar */
+            display: flex;
+            flex-direction: column;
+            padding: 2rem 4rem;
+            
+            /* Slide down animation */
+            transform: translateY(-100%);
+            transition: transform 0.6s var(--ease-out-expo);
+            pointer-events: none;
+        }
+
+        .menu-overlay.active {
+            transform: translateY(0);
+            pointer-events: all;
+        }
+
+        .menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-close {
+            background: none;
+            border: none;
+            color: var(--text-light);
+            font-size: 0.75rem;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+        }
+
+        .menu-body {
+            flex-grow: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            align-items: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.4s ease;
         }
-        
-        .mobile-menu-overlay.active {
-            opacity: 1;
-            pointer-events: all;
-        }
-        
-        .mobile-nav-links {
+
+        .menu-giant-links {
             list-style: none;
-            text-align: center;
             display: flex;
             flex-direction: column;
-            gap: 2rem;
+        }
+
+        .menu-giant-links li a {
+            font-size: clamp(3rem, 7vw, 6rem);
+            line-height: 1.1;
+            letter-spacing: -0.04em;
+            text-transform: uppercase;
+            position: relative;
+            display: inline-block;
+            overflow: hidden;
         }
         
-        .mobile-nav-links li a {
-            font-size: 2rem;
+        .menu-giant-links li a span {
+            display: inline-block;
+            transition: transform 0.6s var(--ease-custom);
+        }
+        .menu-giant-links li a::after {
+            content: attr(data-text);
+            position: absolute;
+            left: 0;
+            top: 100%;
+            transition: transform 0.6s var(--ease-custom);
+            white-space: nowrap;
+        }
+        .menu-giant-links li a:hover span {
+            transform: translateY(-100%);
+        }
+        .menu-giant-links li a:hover::after {
+            transform: translateY(-100%);
+        }
+
+        .menu-footer {
+            font-size: 0.75rem;
+            font-weight: 400;
             text-transform: uppercase;
-            letter-spacing: -0.02em;
+            letter-spacing: 0.05em;
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
         }
 
         .btn-pill {
@@ -276,22 +316,36 @@
             color: inherit;
         }
 
-        /* Hero Section (White nav): Hover fills white, text becomes black */
         .btn-pill:hover {
             background-color: var(--text-light);
             color: var(--text-main);
         }
 
-        /* Scrolled Section (Black nav): Hover fills black, text becomes white */
         nav.scrolled .btn-pill:hover {
             background-color: var(--text-main);
             color: var(--text-light);
         }
 
+        .btn-pill-solid {
+            background-color: var(--text-light);
+            color: var(--text-main);
+            border-color: var(--text-light);
+        }
+        
+        nav.scrolled .btn-pill-solid {
+            background-color: var(--text-main);
+            color: var(--text-light);
+            border-color: var(--text-main);
+        }
+
+        .btn-pill-solid:hover {
+            background-color: transparent;
+            color: currentColor;
+        }
+
         @media (max-width: 900px) {
-            nav { padding: 1.5rem; grid-template-columns: 1fr auto; }
-            .nav-links { display: none; }
-            .mobile-menu-btn { display: block; }
+            nav { padding: 1.5rem; }
+            .menu-overlay { padding: 1.5rem; }
         }
 
         /* --- CINEMATIC HERO SECTION --- */
@@ -784,27 +838,35 @@
 </head>
 <body>
     
-    <!-- Mobile Menu Overlay -->
-    <div class="mobile-menu-overlay" id="mobileMenu">
-        <ul class="mobile-nav-links">
-            <li><a href="#">About</a></li>
-            <li><a href="#">Projects</a></li>
-            <li><a href="#">Services</a></li>
-            <li><a href="#">Contact</a></li>
-        </ul>
+    <!-- Full-Screen Menu Overlay -->
+    <div class="menu-overlay" id="fullMenu">
+        <div class="menu-header">
+            <div class="logo">MASS + STRATEGY</div>
+            <button class="btn-close" id="closeMenuBtn">CLOSE</button>
+        </div>
+        <div class="menu-body">
+            <ul class="menu-giant-links">
+                <li><a href="#" data-text="HOME"><span>HOME</span></a></li>
+                <li><a href="#" data-text="WORKS"><span>WORKS</span></a></li>
+                <li><a href="#" data-text="STUDIO"><span>STUDIO</span></a></li>
+                <li><a href="#" data-text="PROCESS"><span>PROCESS</span></a></li>
+                <li><a href="#" data-text="GALLERY"><span>GALLERY</span></a></li>
+            </ul>
+        </div>
+        <div class="menu-footer">
+            <div class="menu-footer-left" style="display: flex; gap: 2rem;">
+                <a href="#">INSTAGRAM</a>
+                <a href="#">PRIVACY POLICY</a>
+                <a href="#">TERMS OF SERVICE</a>
+            </div>
+        </div>
     </div>
 
     <nav id="navbar">
         <div class="logo">MASS + STRATEGY</div>
-        <ul class="nav-links">
-            <li><a href="#" data-text="About"><span>About</span></a></li>
-            <li><a href="#" data-text="Projects"><span>Projects</span></a></li>
-            <li><a href="#" data-text="Services"><span>Services</span></a></li>
-            <li><a href="#" data-text="Contact"><span>Contact</span></a></li>
-        </ul>
         <div class="nav-right">
-            <a href="#" class="btn-pill"><span class="btn-pill-text" data-text="GET IN TOUCH →"><span>GET IN TOUCH →</span></span></a>
-            <button class="mobile-menu-btn" id="menuBtn">☰</button>
+            <a href="#" class="btn-pill btn-pill-solid"><span class="btn-pill-text" data-text="GET IN TOUCH"><span>GET IN TOUCH</span></span></a>
+            <button class="btn-pill" id="menuBtn"><span class="btn-pill-text" data-text="MENU"><span>MENU</span></span></button>
         </div>
     </nav>
 
@@ -988,19 +1050,50 @@
         </footer>
     </main>
 
+    <!-- Lenis Smooth Scrolling -->
+    <script src="https://unpkg.com/@studio-freight/lenis@1.0.39/dist/lenis.min.js"></script>
+
     <script>
         document.addEventListener("DOMContentLoaded", () => {
+            // --- 0. LENIS SMOOTH SCROLLING ---
+            const lenis = new Lenis({
+                duration: 1.2,
+                easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+                direction: 'vertical',
+                gestureDirection: 'vertical',
+                smooth: true,
+                mouseMultiplier: 1,
+                smoothTouch: false,
+                touchMultiplier: 2,
+                infinite: false,
+            });
+
+            function raf(time) {
+                lenis.raf(time);
+                requestAnimationFrame(raf);
+            }
+
+            requestAnimationFrame(raf);
+
             // --- 1. NAVBAR SCROLL EFFECT & PARALLAX ---
             const navbar = document.getElementById('navbar');
             const hero = document.getElementById('hero');
             const heroOverlay = document.getElementById('heroDarkOverlay');
             const heroHeight = hero.offsetHeight;
             let isScrolling = false;
+            let lastScrollY = window.scrollY;
 
             window.addEventListener('scroll', () => {
                 if (!isScrolling) {
                     window.requestAnimationFrame(() => {
                         const scrollY = window.scrollY;
+
+                        // Smart sticky header logic
+                        if (scrollY > lastScrollY && scrollY > 100) {
+                            navbar.classList.add('hidden');
+                        } else {
+                            navbar.classList.remove('hidden');
+                        }
 
                         // Change navbar color when scrolled past 80% of the hero section
                         if (scrollY > heroHeight * 0.8) {
@@ -1020,6 +1113,7 @@
                             heroOverlay.style.opacity = opacity;
                         }
                         
+                        lastScrollY = scrollY;
                         isScrolling = false;
                     });
                     isScrolling = true;
@@ -1058,12 +1152,15 @@
             
             // --- 3. MOBILE MENU TOGGLE ---
             const menuBtn = document.getElementById('menuBtn');
-            const mobileMenu = document.getElementById('mobileMenu');
+            const closeMenuBtn = document.getElementById('closeMenuBtn');
+            const fullMenu = document.getElementById('fullMenu');
             
-            if (menuBtn && mobileMenu) {
+            if (menuBtn && fullMenu && closeMenuBtn) {
                 menuBtn.addEventListener('click', () => {
-                    mobileMenu.classList.toggle('active');
-                    menuBtn.innerText = mobileMenu.classList.contains('active') ? '✕' : '☰';
+                    fullMenu.classList.add('active');
+                });
+                closeMenuBtn.addEventListener('click', () => {
+                    fullMenu.classList.remove('active');
                 });
             }
         });
