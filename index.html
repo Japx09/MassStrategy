@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MASS + STRATEGY | Architecture & Planning</title>
+    <style>
+        /* --- FONTS --- */
+        @font-face {
+            font-family: 'PP Neue Montreal';
+            src: local('PP Neue Montreal'), local('PPNeueMontreal-Regular'); /* Replace with url('path/to/ppneuemontreal-regular.woff2') */
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'PP Neue Montreal';
+            src: local('PP Neue Montreal Medium'), local('PPNeueMontreal-Medium'); /* Replace with url('path/to/ppneuemontreal-medium.woff2') */
+            font-weight: 500;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'PP Neue Montreal';
+            src: local('PP Neue Montreal Bold'), local('PPNeueMontreal-Bold'); /* Replace with url('path/to/ppneuemontreal-bold.woff2') */
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        /* --- DESIGN SYSTEM & VARIABLES --- */
+        :root {
+            --bg-primary: #f8f8f8;
+            --bg-dark: #111111;
+            --text-main: #111111;
+            --text-light: #ffffff;
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-custom: cubic-bezier(0.77, 0, 0.175, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "PP Neue Montreal", "Helvetica Neue", Inter, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            font-weight: 400; /* Set base weight to regular */
+        }
+
+        /* --- TYPOGRAPHY --- */
+        h1, h2, h3 {
+            text-transform: uppercase;
+            font-weight: 400;
+            line-height: 0.85;
+            letter-spacing: -0.04em;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* --- GLOBAL LINK CUBE HOVER ANIMATION --- */
+        .nav-links li a,
+        .giant-nav li a,
+        .footer-bottom a,
+        .btn-pill-text {
+            position: relative;
+            display: inline-block;
+            overflow: hidden; /* Itinatago ang text na lumagpas sa labas */
+            vertical-align: middle;
+        }
+
+        /* Ginamit ang inline-grid para mag-adjust ang lapad depende sa haba ng text (halimbawa: 2024 vs VIEW PROJECT) */
+        .project-year-hover {
+            display: inline-grid;
+            overflow: hidden;
+            vertical-align: middle;
+            justify-items: start; /* Default na left-aligned para sa hero section */
+        }
+
+        .project-card .project-year-hover {
+            justify-items: end; /* Para manatiling naka-align sa kanan ang "2024" sa loob ng project cards */
+        }
+
+        .nav-links li a span,
+        .giant-nav li a span,
+        .footer-bottom a span,
+        .project-year-hover span,
+        .btn-pill-text span {
+            display: inline-block;
+            transition: transform 0.6s var(--ease-custom);
+        }
+
+        .project-year-hover span {
+            grid-area: 1 / 1;
+        }
+
+        .nav-links li a::after,
+        .giant-nav li a::after,
+        .footer-bottom a::after,
+        .btn-pill-text::after {
+            content: attr(data-text); /* Kinukuha ang laman ng data-text attribute */
+            position: absolute;
+            left: 0;
+            top: 100%; /* Nagsisimula sa eksaktong ilalim */
+            transition: transform 0.6s var(--ease-custom);
+            white-space: nowrap; /* Pinipigilan ang paghihiwalay ng linya ng text */
+        }
+
+        .project-year-hover::after {
+            content: attr(data-text);
+            grid-area: 1 / 1;
+            transform: translateY(100%); /* Nagsisimula sa ilalim sa loob ng grid */
+            transition: transform 0.6s var(--ease-custom);
+            white-space: nowrap;
+        }
+
+        /* Pag-trigger ng effect tuwing hover sa container */
+        .nav-links li a:hover span,
+        .giant-nav li a:hover span,
+        .footer-bottom a:hover span,
+        .project-year-hover:hover span,
+        .btn-pill:hover .btn-pill-text span,
+        .project-card:hover .project-year-hover span {
+            transform: translateY(-100%); /* Umaakyat ang orihinal na text pataas at nawawala */
+        }
+
+        .nav-links li a:hover::after,
+        .giant-nav li a:hover::after,
+        .footer-bottom a:hover::after,
+        .btn-pill:hover .btn-pill-text::after {
+            transform: translateY(-100%); /* Pumapasok ang nakatagong text mula sa ilalim */
+        }
+
+        .project-year-hover:hover::after,
+        .project-card:hover .project-year-hover::after {
+            transform: translateY(0); /* Bumabalik sa gitna ang mahabang text mula sa ibaba */
+        }
+
+        /* --- ANIMATION UTILITIES (Slide-Up Effect) --- */
+        .reveal-wrapper {
+            overflow: hidden;
+            display: inline-block;
+            vertical-align: bottom;
+        }
+
+        .reveal-text {
+            display: inline-block;
+            transform: translateY(110%);
+            transition: transform 1.2s var(--ease-custom);
+            will-change: transform;
+        }
+
+        .reveal-wrapper.active .reveal-text {
+            transform: translateY(0);
+        }
+
+        .hero-footer h1 .reveal-wrapper {
+            display: block; /* Forces clean line breaks and prevents awkward inline wrapping */
+        }
+
+        /* --- NAVIGATION --- */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 2rem 4rem;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            z-index: 100;
+            color: var(--text-light);
+            transition: color 0.4s ease, background-color 0.4s ease, border-color 0.4s ease;
+        }
+
+        /* Scrolled state for navigation (changes to dark text) */
+        nav.scrolled {
+            color: var(--text-main);
+            background-color: rgba(248, 248, 248, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 400;
+            letter-spacing: -0.02em;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            list-style: none;
+            font-size: 0.75rem;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .nav-right {
+            justify-self: end;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        /* Mobile Menu Toggle */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: inherit;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 101;
+        }
+        
+        .mobile-menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            z-index: 99;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+        
+        .mobile-menu-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .mobile-nav-links {
+            list-style: none;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        
+        .mobile-nav-links li a {
+            font-size: 2rem;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+        }
+
+        .btn-pill {
+            display: inline-block;
+            border: 1px solid currentColor;
+            padding: 0.6rem 1.4rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: transparent;
+            color: inherit;
+        }
+
+        /* Hero Section (White nav): Hover fills white, text becomes black */
+        .btn-pill:hover {
+            background-color: var(--text-light);
+            color: var(--text-main);
+        }
+
+        /* Scrolled Section (Black nav): Hover fills black, text becomes white */
+        nav.scrolled .btn-pill:hover {
+            background-color: var(--text-main);
+            color: var(--text-light);
+        }
+
+        @media (max-width: 900px) {
+            nav { padding: 1.5rem; grid-template-columns: 1fr auto; }
+            .nav-links { display: none; }
+            .mobile-menu-btn { display: block; }
+        }
+
+        /* --- CINEMATIC HERO SECTION --- */
+        .hero {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 3rem 4rem;
+            background: url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070&auto=format&fit=crop') center/cover no-repeat;
+            z-index: 1;
+            will-change: transform;
+        }
+
+        .main-content {
+            position: relative;
+            z-index: 10;
+            margin-top: 100vh; /* Pushes content down below the fixed hero */
+            background-color: var(--bg-primary); /* Covers the hero as it scrolls up */
+        }
+
+        @media (max-width: 768px) {
+            .hero { padding: 2rem 1.5rem; }
+        }
+
+        /* Gradients ensure text is perfectly readable regardless of the image */
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 200px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%);
+            z-index: 2;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0; height: 50vh;
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+            z-index: 2;
+        }
+
+        /* NEW: Dark overlay that fades in on scroll */
+        .hero-dark-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #000000;
+            opacity: 0; /* Controlled by JS */
+            z-index: 3;
+            pointer-events: none;
+            will-change: opacity;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            color: var(--text-light);
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            width: 100%;
+        }
+
+        /* The featured project band across the image */
+        .project-band {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr 1fr;
+            padding-bottom: 1.5rem;
+            font-size: 0.75rem;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .project-band div:nth-child(4) {
+            text-align: right;
+        }
+
+        @media (max-width: 768px) {
+            .project-band { 
+                grid-template-columns: 1fr 1fr; 
+                gap: 1rem;
+            }
+            .project-band .hide-mobile { display: none; }
+        }
+
+        /* The descriptive paragraph on the image */
+        .hero-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .hero-footer h1 {
+            font-size: clamp(1.5rem, 3vw, 2.5rem);
+            line-height: 1.3;
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: -0.01em;
+            margin: 0;
+        }
+
+        .scroll-text {
+            font-size: 0.75rem;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* --- GIANT TEXT INTRO SECTION --- */
+        .intro {
+            padding: 8rem 4rem 4rem;
+        }
+
+        @media (max-width: 768px) {
+            .intro { padding: 5rem 1.5rem; }
+        }
+
+        .intro h2 {
+            font-size: clamp(3rem, 9vw, 9.5rem);
+            margin-bottom: 0.1em;
+        }
+
+        /* Match OH: Offset image and text to the right */
+        .intro-details {
+            display: flex;
+            justify-content: center;
+            margin-top: 5rem;
+        }
+
+        @media (min-width: 769px) {
+            .intro-details { justify-content: flex-end; padding-right: 10%; }
+        }
+
+        .intro-details-inner {
+            max-width: 450px;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .intro-img {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+        }
+
+        .intro-copy p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            font-weight: 400;
+        }
+        
+        .section-tag {
+            font-size: 0.75rem;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 2rem;
+        }
+
+        .btn-pill-dark {
+            border-color: var(--text-main);
+            color: var(--text-main);
+            padding: 1rem 2rem;
+            text-align: center;
+        }
+        
+        .btn-pill-dark:hover {
+            background-color: var(--text-main);
+            color: var(--text-light) !important;
+        }
+
+        /* --- FEATURED WORKS (Staggered Grid) --- */
+        .projects {
+            padding: 10rem 4rem 10rem;
+        }
+
+        @media (max-width: 768px) {
+            .projects { padding: 6rem 1.5rem; }
+        }
+
+        .projects-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline; /* Aligns the bottom of the texts perfectly */
+            margin-bottom: 5rem;
+            border-bottom: 2px solid var(--text-main);
+            padding-bottom: 1rem;
+        }
+
+        .projects-header h2 {
+            font-size: clamp(3rem, 10vw, 10rem);
+            line-height: 0.85;
+            margin: 0;
+            letter-spacing: -0.04em;
+        }
+
+        .projects-count {
+            font-size: clamp(3rem, 10vw, 10rem);
+            line-height: 0.85;
+            font-weight: 400;
+            letter-spacing: -0.04em;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4rem;
+        }
+
+        @media (max-width: 768px) {
+            .grid-container { grid-template-columns: 1fr; gap: 3rem; }
+            .grid-container .project-card:nth-child(even) { margin-top: 0; }
+        }
+
+        /* Stagger the right column */
+        @media (min-width: 769px) {
+            .grid-container .project-card:nth-child(even) {
+                margin-top: 10rem;
+            }
+        }
+
+        .project-image-wrapper {
+            overflow: hidden;
+            width: 100%;
+            aspect-ratio: 4/3; /* Slightly wider to match screenshots */
+        }
+
+        .project-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background-color: #ddd;
+            transition: transform 1s var(--ease-out-expo);
+        }
+
+        .project-card {
+            cursor: pointer;
+        }
+
+        .project-card:hover .project-image {
+            transform: scale(1.05);
+        }
+
+        .project-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+            font-weight: 400;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+        }
+
+        /* --- OUR PROCESS SECTION --- */
+        .process {
+            padding: 10rem 4rem;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 6rem;
+            border-top: 1px solid #ddd;
+        }
+        
+        @media (max-width: 768px) { 
+            .process { grid-template-columns: 1fr; padding: 6rem 1.5rem; gap: 4rem;} 
+        }
+
+        .process-img {
+            width: 100%;
+            aspect-ratio: 1/1;
+            object-fit: cover;
+            margin-bottom: 2rem;
+        }
+
+        .process-list {
+            list-style: none;
+        }
+
+        .process-list li {
+            display: flex;
+            gap: 1rem;
+            border-bottom: 1px solid #ddd;
+            padding: 1rem 0;
+            font-size: 0.9rem;
+        }
+
+        .process-list li span {
+            opacity: 0.5;
+        }
+
+        .giant-text {
+            font-size: clamp(2rem, 5vw, 4.8rem);
+            line-height: 0.95;
+            letter-spacing: -0.04em;
+            margin-bottom: 2.5rem;
+        }
+
+        /* --- CLIENT / TESTIMONIAL SECTION --- */
+        .client {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border-top: 1px solid #ddd;
+        }
+
+        @media (max-width: 768px) { 
+            .client { grid-template-columns: 1fr; } 
+        }
+
+        .client-left {
+            padding: 6rem 4rem 10rem;
+        }
+
+        @media (max-width: 768px) { .client-left { padding: 4rem 1.5rem; } }
+
+        /* --- IMAGE HOVER ZOOM EFFECTS --- */
+        .client-img-main-wrapper {
+            width: 100%;
+            aspect-ratio: 4/3;
+            margin-bottom: 3rem;
+            overflow: hidden;
+        }
+
+        .client-img-main {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 1.2s var(--ease-custom);
+            will-change: transform;
+        }
+
+        .client-img-main-wrapper:hover .client-img-main {
+            transform: scale(1.05); /* Zoom in sa hover */
+        }
+
+        .client-img-small-wrapper {
+            width: 100%;
+            aspect-ratio: 3/4;
+            overflow: hidden;
+            opacity: 0;
+            transform: scale(1.15);
+            transition: opacity 0.8s var(--ease-custom), transform 0.8s var(--ease-custom);
+        }
+
+        .client-right:hover .client-img-small-wrapper {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .client-img-small {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .quote {
+            font-size: clamp(1.2rem, 2vw, 1.5rem);
+            line-height: 1.4;
+            font-weight: 400;
+            margin-bottom: 2rem;
+        }
+
+        .client-right {
+            background: url('https://images.unsplash.com/photo-1600607686527-6fb886090705?q=80&w=1000&auto=format&fit=crop') center/cover no-repeat;
+            position: relative;
+            padding: 6rem 4rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .client-right::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.2); /* Lighter background initially */
+            transition: background 0.8s var(--ease-custom);
+        }
+
+        .client-right:hover::before {
+            background: rgba(0,0,0,0.7); /* Darken on hover to emphasize the overlay */
+        }
+
+        .client-right-inner {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            color: var(--text-light);
+        }
+
+        .client-img-small {
+            width: 100%;
+            aspect-ratio: 3/4;
+            object-fit: cover;
+        }
+
+        .client-meta-center {
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            margin: 1.5rem 0;
+            text-transform: uppercase;
+        }
+
+        /* --- FOOTER SECTION --- */
+        footer {
+            background-color: var(--bg-primary); 
+            color: var(--text-main);
+            padding: 6rem 4rem 4rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 4rem;
+            border-top: 1px solid #ddd;
+        }
+
+        @media (max-width: 900px) {
+            footer { grid-template-columns: 1fr; padding: 4rem 1.5rem; }
+        }
+
+        .footer-left {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .footer-img {
+            width: 100%;
+            aspect-ratio: 4/5;
+            object-fit: cover;
+            margin-bottom: 1rem;
+        }
+
+        .footer-logo {
+            font-size: clamp(8rem, 15vw, 18rem);
+            font-weight: 400;
+            line-height: 0.75;
+            letter-spacing: -0.06em;
+            margin-left: -0.5rem; /* Pulls slightly left to align perfectly */
+        }
+
+        .footer-col {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .footer-col .section-tag {
+            margin-bottom: 1.5rem;
+        }
+
+        .giant-nav {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .giant-nav li a {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            line-height: 1.1;
+            letter-spacing: -0.04em;
+        }
+
+        .footer-col p {
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        .footer-bottom {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            margin-top: 3rem;
+            font-size: 0.75rem;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-top: 1px solid #ddd;
+            padding-top: 2rem;
+        }
+
+    </style>
+</head>
+<body>
+    
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" id="mobileMenu">
+        <ul class="mobile-nav-links">
+            <li><a href="#">About</a></li>
+            <li><a href="#">Projects</a></li>
+            <li><a href="#">Services</a></li>
+            <li><a href="#">Contact</a></li>
+        </ul>
+    </div>
+
+    <nav id="navbar">
+        <div class="logo">MASS + STRATEGY</div>
+        <ul class="nav-links">
+            <li><a href="#" data-text="About"><span>About</span></a></li>
+            <li><a href="#" data-text="Projects"><span>Projects</span></a></li>
+            <li><a href="#" data-text="Services"><span>Services</span></a></li>
+            <li><a href="#" data-text="Contact"><span>Contact</span></a></li>
+        </ul>
+        <div class="nav-right">
+            <a href="#" class="btn-pill"><span class="btn-pill-text" data-text="GET IN TOUCH →"><span>GET IN TOUCH →</span></span></a>
+            <button class="mobile-menu-btn" id="menuBtn">☰</button>
+        </div>
+    </nav>
+
+    <header class="hero" id="hero">
+        <!-- New overlay div added here -->
+        <div class="hero-dark-overlay" id="heroDarkOverlay"></div>
+        
+        <div class="hero-content">
+            <!-- Project Band like OH Architecture -->
+            <div class="project-band">
+                <div>FEATURED PROJECT</div>
+                <div>WOODWAY RESIDENCE</div>
+                <div class="hide-mobile"><a href="#" class="project-year-hover" style="color:inherit;" data-text="VIEW PROJECT"><span>2024</span></a></div>
+                <div>VIEW PROJECT &rarr;</div>
+            </div>
+            
+            <!-- Hero Footer text like OH Architecture -->
+            <div class="hero-footer">
+                <h1>
+                    <span class="reveal-wrapper"><span class="reveal-text" style="transition-delay: 0.1s">The Mass + Strategy approach is defined by</span></span>
+                    <span class="reveal-wrapper"><span class="reveal-text" style="transition-delay: 0.2s">integrated design, seamless planning, natural</span></span>
+                    <span class="reveal-wrapper"><span class="reveal-text" style="transition-delay: 0.3s">balance, and enduring architectural appeal.</span></span>
+                </h1>
+                <div class="scroll-text hide-mobile">(SCROLL DOWN)</div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="intro">
+            <!-- Moved the giant typography here, below the hero -->
+            <div>
+                <span class="reveal-wrapper"><h2 class="reveal-text" style="transition-delay: 0.1s">BOUTIQUE</h2></span><br>
+                <span class="reveal-wrapper"><h2 class="reveal-text" style="transition-delay: 0.2s">ARCHITECTURE</h2></span><br>
+                <span class="reveal-wrapper"><h2 class="reveal-text" style="transition-delay: 0.3s">& TOWN</h2></span><br>
+                <span class="reveal-wrapper"><h2 class="reveal-text" style="transition-delay: 0.4s">PLANNING.</h2></span>
+            </div>
+
+            <div class="intro-details">
+                <div class="intro-details-inner">
+                    <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=800&auto=format&fit=crop" alt="Interior architectural detail" class="intro-img">
+                    <div class="intro-copy">
+                        <p>Mass and Strategy come together to offer architectural design and town planning expertise from their London-based consultancy. We work closely with clients right from the start, providing clear communication and expert guidance along the way.</p>
+                    </div>
+                    <a href="#" class="btn-pill btn-pill-dark" style="align-self: flex-start;"><span class="btn-pill-text" data-text="LEARN MORE ABOUT US →"><span>LEARN MORE ABOUT US →</span></span></a>
+                </div>
+            </div>
+        </section>
+
+        <section class="projects">
+            <div class="projects-header">
+                <span class="reveal-wrapper"><h2 class="reveal-text">FEATURED<br>WORKS</h2></span>
+                <span class="reveal-wrapper"><div class="reveal-text projects-count">(04)</div></span>
+            </div>
+            
+            <div class="grid-container">
+                <!-- Project 1 -->
+                <div class="project-card">
+                    <div class="project-image-wrapper">
+                        <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop" class="project-image" alt="Woodway Project">
+                    </div>
+                    <div class="project-meta">
+                        <span>(01) WOODWAY</span>
+                        <span class="project-year-hover" data-text="VIEW PROJECT &rarr;"><span>2024</span></span>
+                    </div>
+                </div>
+                <!-- Project 2 -->
+                <div class="project-card">
+                    <div class="project-image-wrapper">
+                        <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=800&auto=format&fit=crop" class="project-image" alt="Staples Road Project">
+                    </div>
+                    <div class="project-meta">
+                        <span>(02) STAPLES ROAD</span>
+                        <span class="project-year-hover" data-text="VIEW PROJECT &rarr;"><span>2023</span></span>
+                    </div>
+                </div>
+                 <!-- Project 3 -->
+                 <div class="project-card">
+                    <div class="project-image-wrapper">
+                        <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop" class="project-image" alt="The Ark Project">
+                    </div>
+                    <div class="project-meta">
+                        <span>(03) THE ARK</span>
+                        <span class="project-year-hover" data-text="VIEW PROJECT &rarr;"><span>2023</span></span>
+                    </div>
+                </div>
+                <!-- Project 4 -->
+                <div class="project-card">
+                    <div class="project-image-wrapper">
+                        <img src="https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?q=80&w=800&auto=format&fit=crop" class="project-image" alt="City View Apartments">
+                    </div>
+                    <div class="project-meta">
+                        <span>(04) CITY VIEW APTS</span>
+                        <span class="project-year-hover" data-text="VIEW PROJECT &rarr;"><span>2022</span></span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="process">
+            <div class="process-left">
+                <div class="section-tag hide-mobile">(OUR PROCESS)</div>
+                <img src="https://images.unsplash.com/photo-1600607686527-6fb886090705?q=80&w=800&auto=format&fit=crop" alt="Process Detail" class="process-img">
+                <ul class="process-list">
+                    <li><span>(01)</span> Sketch Design</li>
+                    <li><span>(02)</span> Design Development</li>
+                    <li><span>(03)</span> Town Planning Application</li>
+                    <li><span>(04)</span> Interior Design</li>
+                    <li><span>(05)</span> Building Approval Plans</li>
+                    <li><span>(06)</span> Construction Documentation</li>
+                </ul>
+            </div>
+            <div class="process-right">
+                <h2 class="giant-text">Our approach at Mass + Strategy is designed to make your journey from concept to completion as smooth and enjoyable as possible.</h2>
+                <h2 class="giant-text" style="margin-top: 3rem;">With our 6-stage process, we prioritise clarity, collaboration, and your unique vision. At every step, we'll keep you informed, inspired, and involved.</h2>
+                <br>
+                <a href="#" class="btn-pill btn-pill-dark"><span class="btn-pill-text" data-text="GET TO KNOW OUR PROCESS →"><span>GET TO KNOW OUR PROCESS →</span></span></a>
+            </div>
+        </section>
+
+        <section class="client">
+            <div class="client-left">
+                <div class="section-tag hide-mobile">(HEAR FROM OUR CLIENT)</div>
+                <p class="quote">"From the initial meeting I was impressed by the genuine enthusiasm and willingness to engage with the ideas in my brief. The Mass + Strategy team engendered confidence. They cared about the project; throughout the design process they listened and interacted in a positive and professional, but relaxed, way."</p>
+                <p class="quote">"As they explored design ideas, they welcomed my contributions and encouraged feedback. Consequently, I had no doubt that they would deliver a design to meet my dreams and also my budget."</p>
+                <br>
+                <span class="client-meta-center" style="display: block; margin:0;">HOMEOWNER OF WOODWAY</span>
+            </div>
+            <div class="client-right">
+                <div class="client-right-inner">
+                    <div class="client-meta-center">STAPLES ROAD</div>
+                    <!-- Binalot sa wrapper para sa scale effect -->
+                    <div class="client-img-small-wrapper">
+                        <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=800&auto=format&fit=crop" alt="Staples Road Interior" class="client-img-small">
+                    </div>
+                    <div class="client-meta-center">LOUGHTON, ESSEX</div>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <div class="footer-left">
+                <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop" alt="Architecture Detail" class="footer-img">
+                <div class="footer-logo">M+S</div>
+            </div>
+            
+            <div class="footer-col">
+                <div class="section-tag">(NAVIGATION)</div>
+                <ul class="giant-nav">
+                    <li><a href="#" data-text="Home"><span>Home</span></a></li>
+                    <li><a href="#" data-text="Works"><span>Works</span></a></li>
+                    <li><a href="#" data-text="In Progress"><span>In Progress</span></a></li>
+                    <li><a href="#" data-text="Archive"><span>Archive</span></a></li>
+                    <li><a href="#" data-text="Studio"><span>Studio</span></a></li>
+                    <li><a href="#" data-text="Process"><span>Process</span></a></li>
+                    <li><a href="#" data-text="Contact Us"><span>Contact Us</span></a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <div class="section-tag">(ACKNOWLEDGEMENT)</div>
+                <p>We respectfully acknowledge the traditional owners and custodians of the communities in which we work. We pay our respects to the people and environment, ensuring sustainable and thoughtful development in all our practices.</p>
+                <br><br><br>
+                <div class="section-tag">(INFO)</div>
+                <p>
+                    A: 123 Architecture Blvd, London UK<br>
+                    E: info@massandstrategy.co.uk<br>
+                    P: +44 020 1234 5678<br>
+                    H: Monday to Friday, 9:00am - 6:00pm
+                </p>
+            </div>
+
+            <div class="footer-bottom">
+                <span>&copy; 2026 MASS + STRATEGY</span>
+                <span style="display:flex; gap: 2rem;">
+                    <a href="#" data-text="PRIVACY POLICY"><span>PRIVACY POLICY</span></a>
+                    <a href="#" data-text="TERMS OF SERVICE"><span>TERMS OF SERVICE</span></a>
+                    <a href="#" data-text="INSTAGRAM"><span>INSTAGRAM</span></a>
+                </span>
+            </div>
+        </footer>
+    </main>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // --- 1. NAVBAR SCROLL EFFECT & PARALLAX ---
+            const navbar = document.getElementById('navbar');
+            const hero = document.getElementById('hero');
+            const heroOverlay = document.getElementById('heroDarkOverlay');
+            const heroHeight = hero.offsetHeight;
+            let isScrolling = false;
+
+            window.addEventListener('scroll', () => {
+                if (!isScrolling) {
+                    window.requestAnimationFrame(() => {
+                        const scrollY = window.scrollY;
+
+                        // Change navbar color when scrolled past 80% of the hero section
+                        if (scrollY > heroHeight * 0.8) {
+                            navbar.classList.add('scrolled');
+                        } else {
+                            navbar.classList.remove('scrolled');
+                        }
+
+                        // Parallax and Darken effect for the hero
+                        // Only run this while the hero is visible to save performance
+                        if (scrollY <= heroHeight) {
+                            // Parallax: moves the hero up at 40% of the scroll speed
+                            hero.style.transform = `translate3d(0, -${scrollY * 0.4}px, 0)`;
+                            
+                            // Darken: fades in the black overlay based on scroll percentage (max 85% opacity)
+                            const opacity = Math.min(scrollY / heroHeight, 0.85);
+                            heroOverlay.style.opacity = opacity;
+                        }
+                        
+                        isScrolling = false;
+                    });
+                    isScrolling = true;
+                }
+            });
+
+            // --- 2. INTERSECTION OBSERVER FOR SLIDE-UP ANIMATIONS ---
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px 0px -10% 0px', 
+                threshold: 0.1
+            };
+
+            const observerCallback = (entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        // Stop observing once animated
+                        observer.unobserve(entry.target); 
+                    }
+                });
+            };
+
+            const observer = new IntersectionObserver(observerCallback, observerOptions);
+
+            const revealElements = document.querySelectorAll('.reveal-wrapper');
+            revealElements.forEach((el) => {
+                observer.observe(el);
+            });
+            
+            // Immediately trigger hero animations on load
+            setTimeout(() => {
+                const heroReveals = document.querySelectorAll('.hero .reveal-wrapper');
+                heroReveals.forEach(el => el.classList.add('active'));
+            }, 100);
+            
+            // --- 3. MOBILE MENU TOGGLE ---
+            const menuBtn = document.getElementById('menuBtn');
+            const mobileMenu = document.getElementById('mobileMenu');
+            
+            if (menuBtn && mobileMenu) {
+                menuBtn.addEventListener('click', () => {
+                    mobileMenu.classList.toggle('active');
+                    menuBtn.innerText = mobileMenu.classList.contains('active') ? '✕' : '☰';
+                });
+            }
+        });
+    </script>
+</body>
+</html>
